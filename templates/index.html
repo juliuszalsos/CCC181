@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <p>Welcome to QueuExpress. Check your place in line from your phone.</p>
+
+  <h2>Tickets in the queue</h2>
+  <ul class="tickets">
+    {% for t in tickets %}
+      <li>
+        <a href="{{ url_for('ticket', ticket_id=t.number) }}">#{{ t.number }}</a>
+        · {{ services[t.service_id] }}
+        · <span class="status status-{{ t.status }}">{{ t.status }}</span>
+      </li>
+    {% else %}
+      <li>The queue is empty.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
