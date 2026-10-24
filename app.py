@@ -6,7 +6,7 @@ then open http://127.0.0.1:5000
 """
 import re
 
-from flask import Flask, abort, flash, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 
 app = Flask(__name__)
 app.secret_key = "dev-only-change-me"  # Week 11 moves this into an environment variable
@@ -29,29 +29,66 @@ TICKETS = [
 ]
 
 ACTIVE_STATUSES = ("waiting", "called")
-
+MINUTES_PER_TICKET = 5  # rough estimate for the approximate wait (FR-02)
 EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
-
-def service_names():
-    """Map service id -> service name for easy lookup in templates."""
-    return {s["id"]: s["name"] for s in SERVICES}
-
 
 def get_ticket(number):
     return next((t for t in TICKETS if t["number"] == number), None)
 
+@app.get("/my-place")
+def my_place():
+    number = session.get("ticket_id")
+    if number is not None and get_ticket(number):
+        return redirect(url_for("ticket", ticket_id=number))
+    session.pop("ticket_id", None)  # stale, e.g. the in-memory data was reset
+    return render_template("find.html", form={})
 
-def people_ahead(ticket):
-    """Count waiting tickets with a lower number than this one."""
-    return sum(
-        1 for t in TICKETS
-        if t["status"] == "waiting" and t["number"] < ticket["number"]
-    )
 
+@app.post("/my-place")
+def find_ticket():
+    raw = request.form.get("number", "").strip().lstrip("#")
+    t = get_ticket(int(raw)) if raw.isdigit() else None
+    if t is None:
+        flash("Please fix the highlighted field.", "danger")
+        return render_template(
+            "find.html",
+            form=request.form,
+            error="We couldn't find that ticket number. Check your ticket and try again.",
+        ), 404
+    session["ticket_id"] = t["number"]
+    return redirect(url_for("ticket", ticket_id=t["number"]))
+
+@app.get("/find")
+def find_form():
+    # Always shows the lookup form, even when a ticket is remembered.
+    return render_template("find.html", form={})
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    active = sorted(
+        (t for t in TICKETS if t["status"] in ACTIVE_STATUSES),
+        key=lambda t: t["number"],
+    )
+    called = [t for t in active if t["status"] == "called"]
+    waiting = [t for t in active if t["status"] == "waiting"]
+    services = {s["id"]: s["name"] for s in SERVICES}
+
+    mine = get_ticket(session.get("ticket_id"))
+    if mine and mine["status"] not in ACTIVE_STATUSES:
+        mine = None
+    my_ahead = None
+    if mine:
+        my_ahead = sum(
+            1 for x in TICKETS
+            if x["service_id"] == mine["service_id"]
+            and x["status"] == "waiting"
+            and x["number"] < mine["number"]
+        )
+    return render_template(
+        "index.html",
+        called=called, waiting=waiting, services=services,
+        mine=mine, my_ahead=my_ahead,
+    )
 
 
 @app.get("/join")
@@ -83,6 +120,7 @@ def join():
     number = TICKETS[-1]["number"] + 1 if TICKETS else 1
     TICKETS.append({"number": number, "name": name, "email": email,
                     "service_id": service_id, "status": "waiting"})
+    session["ticket_id"] = number
     flash(f"You joined the queue. Your ticket is #{number}.", "success")
     return redirect(url_for("ticket", ticket_id=number))
 
@@ -92,19 +130,45 @@ def staff_dashboard():
     return "Staff dashboard coming soon"
 
 
-@app.route("/queue/<int:ticket_id>")
+@app.get("/queue/<int:ticket_id>")
 def ticket(ticket_id):
     # <int:ticket_id> only matches numbers, so /queue/abc returns 404.
     t = get_ticket(ticket_id)
     if t is None:
         abort(404)
+    ahead = [
+        x for x in TICKETS
+        if x["service_id"] == t["service_id"]
+        and x["status"] == "waiting"
+        and x["number"] < t["number"]
+    ]
+    service = next(s for s in SERVICES if s["id"] == t["service_id"])
     return render_template(
         "ticket.html",
         ticket=t,
-        service_name=service_names()[t["service_id"]],
-        ahead=people_ahead(t),
+        service=service,
+        ahead=len(ahead),
+        wait_minutes=len(ahead) * MINUTES_PER_TICKET,
     )
 
+
+@app.post("/queue/<int:ticket_id>/leave")
+def leave(ticket_id):
+    t = get_ticket(ticket_id)
+    if t is None:
+        abort(404)
+    if t["status"] in ACTIVE_STATUSES:
+        t["status"] = "cancelled"
+        flash(f"You left the queue. Ticket #{t['number']} was cancelled.", "info")
+        return redirect(url_for("index"))
+    flash("That ticket is no longer in the queue.", "warning")
+    return redirect(url_for("ticket", ticket_id=ticket_id))
+    if t["status"] in ACTIVE_STATUSES:
+        t["status"] = "cancelled"
+    if session.get("ticket_id") == ticket_id:
+            session.pop("ticket_id")
+    flash(f"You left the queue. Ticket #{t['number']} was cancelled.", "info")
+    return redirect(url_for("index"))
 
 @app.route("/hello")
 def hello():

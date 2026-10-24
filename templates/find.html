@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}My place · QueuExpress{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8 col-lg-6">
+    <h1 class="h3 mb-1">Find my place</h1>
+    <p class="text-body-secondary">
+      Enter the ticket number you got when you joined the queue.
+    </p>
+
+    <form method="post" action="{{ url_for('find_ticket') }}" novalidate>
+      <div class="mb-4">
+        <label for="number" class="form-label">Ticket number</label>
+        <input id="number" name="number" type="text" inputmode="numeric" required
+               class="form-control form-control-lg {% if error %}is-invalid{% endif %}"
+               placeholder="e.g. 5"
+               value="{{ form.get('number', '') }}"
+               {% if error %}aria-describedby="number-error"{% endif %}>
+        {% if error %}
+          <div id="number-error" class="invalid-feedback">{{ error }}</div>
+        {% endif %}
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg w-100">Show my place</button>
+    </form>
+
+    <p class="mt-3">No ticket yet? <a href="{{ url_for('join_form') }}">Join the queue</a>.</p>
+  </div>
+</div>
+{% endblock %}
