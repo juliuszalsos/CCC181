@@ -124,10 +124,71 @@ def join():
     flash(f"You joined the queue. Your ticket is #{number}.", "success")
     return redirect(url_for("ticket", ticket_id=number))
 
-@app.route("/staff")
+STAFF_COUNTER = 3  # Donna's counter number (shown on the dashboard)
+STAFF_ACTIONS = {"serve": "served", "no-show": "no-show"}
+
+
+def active_tickets(service_id=None):
+    """Called tickets first, then waiting, each in ticket-number order."""
+    queue = [t for t in TICKETS if t["status"] in ACTIVE_STATUSES]
+    if service_id:
+        queue = [t for t in queue if t["service_id"] == service_id]
+    return sorted(queue, key=lambda t: (t["status"] != "called", t["number"]))
+
+
+def staff_redirect():
+    # Keeps the chosen service filter after an action.
+    return redirect(url_for("staff_dashboard",
+                            service_id=request.form.get("service_id", type=int)))
+
+
+@app.get("/staff")
 def staff_dashboard():
-    # Placeholder until Part 7 adds the real dashboard.
-    return "Staff dashboard coming soon"
+    service_id = request.args.get("service_id", type=int)
+    queue = active_tickets(service_id)
+    called = [t for t in queue if t["status"] == "called"]
+    waiting = [t for t in queue if t["status"] == "waiting"]
+    names = {s["id"]: s["name"] for s in SERVICES}
+    # Star feature: how many are waiting per service
+    counts = {
+        s["id"]: sum(1 for t in TICKETS
+                     if t["service_id"] == s["id"] and t["status"] == "waiting")
+        for s in SERVICES
+    }
+    return render_template(
+        "staff.html",
+        queue=queue, called=called, waiting=waiting,
+        current=called[0] if called else None,
+        next_ticket=waiting[0] if waiting else None,
+        services=SERVICES, names=names, counts=counts,
+        selected=service_id, counter=STAFF_COUNTER,
+    )
+
+
+@app.post("/staff/call-next")
+def staff_call_next():
+    service_id = request.form.get("service_id", type=int)
+    waiting = [t for t in active_tickets(service_id) if t["status"] == "waiting"]
+    if waiting:
+        waiting[0]["status"] = "called"
+        flash(f"Ticket #{waiting[0]['number']} called. Send them to Counter {STAFF_COUNTER}.", "success")
+    else:
+        flash("No one is waiting.", "info")
+    return staff_redirect()
+
+
+@app.post("/staff/tickets/<int:ticket_id>/<action>")
+def staff_action(ticket_id, action):
+    new_status = STAFF_ACTIONS.get(action)
+    t = get_ticket(ticket_id)
+    if t is None or new_status is None:
+        abort(404)
+    if t["status"] != "called":
+        flash(f"Ticket #{ticket_id} is not being called, so nothing changed.", "warning")
+    else:
+        t["status"] = new_status
+        flash(f"Ticket #{ticket_id} marked {new_status}.", "success")
+    return staff_redirect()
 
 
 @app.get("/queue/<int:ticket_id>")
@@ -159,16 +220,12 @@ def leave(ticket_id):
         abort(404)
     if t["status"] in ACTIVE_STATUSES:
         t["status"] = "cancelled"
+        if session.get("ticket_id") == ticket_id:
+            session.pop("ticket_id")
         flash(f"You left the queue. Ticket #{t['number']} was cancelled.", "info")
         return redirect(url_for("index"))
     flash("That ticket is no longer in the queue.", "warning")
     return redirect(url_for("ticket", ticket_id=ticket_id))
-    if t["status"] in ACTIVE_STATUSES:
-        t["status"] = "cancelled"
-    if session.get("ticket_id") == ticket_id:
-            session.pop("ticket_id")
-    flash(f"You left the queue. Ticket #{t['number']} was cancelled.", "info")
-    return redirect(url_for("index"))
 
 @app.route("/hello")
 def hello():
