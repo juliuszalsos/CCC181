@@ -227,6 +227,23 @@ def leave(ticket_id):
     flash("That ticket is no longer in the queue.", "warning")
     return redirect(url_for("ticket", ticket_id=ticket_id))
 
+@app.get("/queue/<int:ticket_id>/status.json")
+def ticket_status(ticket_id):
+    t = get_ticket(ticket_id)
+    if t is None:
+        abort(404)
+    ahead = sum(
+        1 for x in TICKETS
+        if x["service_id"] == t["service_id"]
+        and x["status"] == "waiting"
+        and x["number"] < t["number"]
+    )
+    return {
+        "status": t["status"],
+        "ahead": ahead,
+        "wait_minutes": ahead * MINUTES_PER_TICKET,
+    }
+    
 @app.route("/hello")
 def hello():
     return "Hello, QueuExpress!"

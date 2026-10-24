@@ -11,45 +11,38 @@
 <body class="d-flex flex-column min-vh-100">
   <a class="visually-hidden-focusable" href="#main">Skip to main content</a>
 
-  <nav class="navbar navbar-expand-md bg-primary" data-bs-theme="dark">
+  <header class="app-header">
     <div class="container">
-      <a class="navbar-brand" href="{{ url_for('index') }}">QueuExpress</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-              data-bs-target="#mainNav" aria-controls="mainNav"
-              aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="mainNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ('join_form', 'join') %}active{% endif %}"
-               {% if request.endpoint in ('join_form', 'join') %}aria-current="page"{% endif %}
-               href="{{ url_for('join_form') }}">Join the queue</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ('my_place', 'find_form', 'find_ticket', 'ticket', 'leave') %}active{% endif %}"
-               {% if request.endpoint in ('my_place', 'find_form', 'find_ticket', 'ticket', 'leave') %}aria-current="page"{% endif %}
-               href="{{ url_for('my_place') }}">My place</a>
-          </li>
-        </ul>
-      </div>
+      <a class="brand" href="{{ url_for('index') }}">QueuExpress</a>
+      <p class="org">Philippine Statistics Authority</p>
+      <p class="org-sub">Iligan City office · Mon–Fri, 8 AM–5 PM</p>
+      <nav class="nav-pills-row" aria-label="Main">
+        <a class="nav-pill {% if request.endpoint in ('join_form', 'join') %}active{% endif %}"
+           {% if request.endpoint in ('join_form', 'join') %}aria-current="page"{% endif %}
+           href="{{ url_for('join_form') }}">Join queue</a>
+        <a class="nav-pill {% if request.endpoint in ('my_place', 'find_form', 'find_ticket', 'ticket', 'leave') %}active{% endif %}"
+           {% if request.endpoint in ('my_place', 'find_form', 'find_ticket', 'ticket', 'leave') %}aria-current="page"{% endif %}
+           href="{{ url_for('my_place') }}">My place</a>
+      </nav>
     </div>
-  </nav>
+  </header>
 
   <main id="main" class="container my-4 flex-grow-1">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endwith %}
+    <div class="app-panel">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endwith %}
 
-    {% block content %}{% endblock %}
+      {% block content %}{% endblock %}
+    </div>
   </main>
 
-    <footer class="border-top py-3 text-center text-body-secondary small">
+  <footer class="border-top py-3 text-center text-body-secondary small">
     QueuExpress · CCC181 ·
     <a href="{{ url_for('staff_dashboard') }}">Staff access</a>
   </footer>
@@ -58,4 +51,4 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
-</html>
+</html> 

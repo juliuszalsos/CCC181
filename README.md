@@ -2,6 +2,8 @@
 
 QueuExpress is a web app for the Philippine Statistics Authority provincial office in Iligan City, where citizens line up for civil registry documents and PhilSys National ID applications. Citizens join the queue and follow their ticket status and position from their phone, while counter staff filter, call and process applicants from a desktop dashboard. This is the Week 2 starter built with Flask and Jinja2; run it with `flask --app app run --debug` and open http://127.0.0.1:5000.
 
+**Note:** The staff dashboard (`/staff`) is open to anyone, with no login, until authentication is added in a later week. Tickets are kept in memory, so they reset whenever the server restarts.
+
 ## Project structure
 
 ```

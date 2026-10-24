@@ -80,11 +80,17 @@
   </div>
 </div>
 
-<!-- Active tickets table -->
-<div class="table-responsive">
+<!-- Active tickets -->
+<h2 class="h3 mb-1">Active tickets</h2>
+<p class="fs-5 text-body-secondary mb-3">
+  {{ queue|length }} active · {{ called|length }} called · {{ waiting|length }} waiting
+</p>
+
+<!-- Tablet and desktop: table -->
+<div class="table-responsive d-none d-md-block">
   <table class="table align-middle fs-5">
-    <caption class="caption-top fs-5 text-body">
-      Active tickets: {{ queue|length }} active · {{ called|length }} called · {{ waiting|length }} waiting
+    <caption class="visually-hidden">
+      Active tickets: {{ queue|length }} active, {{ called|length }} called, {{ waiting|length }} waiting
     </caption>
     <thead>
       <tr>
@@ -98,7 +104,7 @@
     <tbody>
       {% for t in queue %}
         <tr>
-          <th scope="row" class="py-3">#{{ t.number }}</th>
+          <th scope="row" class="py-3 fs-4">#{{ t.number }}</th>
           <td class="py-3">{{ t.name }}</td>
           <td class="py-3">{{ names[t.service_id] }}</td>
           <td class="py-3">
@@ -123,7 +129,7 @@
                 </form>
               </div>
             {% elif t.number == next_ticket.number %}
-              Next to call
+              <strong>Next to call</strong>
             {% else %}
               &mdash;
             {% endif %}
@@ -136,5 +142,43 @@
       {% endfor %}
     </tbody>
   </table>
+</div>
+
+<!-- Phone: stacked cards -->
+<div class="d-md-none d-grid gap-3">
+  {% for t in queue %}
+    <div class="card {% if t.status == 'called' %}border-primary border-2{% endif %}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="ticket-no">#{{ t.number }}</span>
+          {% if t.status == 'called' %}
+            <span class="badge text-bg-primary">Called</span>
+          {% else %}
+            <span class="badge text-bg-warning">Waiting</span>
+          {% endif %}
+        </div>
+        <p class="mb-2">{{ names[t.service_id] }}</p>
+
+        {% if t.status == 'called' %}
+          <div class="d-flex gap-2">
+            <form method="post" action="{{ url_for('staff_action', ticket_id=t.number, action='serve') }}" class="flex-fill">
+              <input type="hidden" name="service_id" value="{{ selected or '' }}">
+              <button type="submit" class="btn btn-success btn-lg w-100"
+                      aria-label="Mark ticket {{ t.number }} as served">Serve</button>
+            </form>
+            <form method="post" action="{{ url_for('staff_action', ticket_id=t.number, action='no-show') }}" class="flex-fill">
+              <input type="hidden" name="service_id" value="{{ selected or '' }}">
+              <button type="submit" class="btn btn-outline-danger btn-lg w-100 border-2"
+                      aria-label="Mark ticket {{ t.number }} as no-show">No-show</button>
+            </form>
+          </div>
+        {% elif t.number == next_ticket.number %}
+          <p class="fw-bold text-primary mb-0">Next to call</p>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p class="text-center py-4 mb-0">No one is waiting. The queue is clear.</p>
+  {% endfor %}
 </div>
 {% endblock %}

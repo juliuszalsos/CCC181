@@ -1,51 +1,189 @@
-/* Colors borrowed from the Week 2 slide deck */
+/* QueuExpress styles. Bootstrap loads first; this file restyles it. */
+
 :root {
-  --navy: #16223A;
-  --paper: #F6F4EE;
-  --card: #FFFDF8;
-  --teal: #2D6F78;
-  --orange: #B4501E;
+  --qx-blue: #2563eb;
+  --qx-ink: #111a2e;
+  --qx-muted: #55637d;
+  --qx-card: #f8fafd;
+  --qx-border: #d6e2f5;
+
+  /* Re-point Bootstrap's own colors at our palette */
+  --bs-primary: #2563eb;
+  --bs-primary-rgb: 37, 99, 235;
+  --bs-primary-bg-subtle: #e8f0fe;
+  --bs-primary-border-subtle: #c3d7fa;
+  --bs-primary-text-emphasis: #1e3a8a;
+  --bs-link-color-rgb: 29, 78, 216;
+  --bs-link-hover-color-rgb: 30, 58, 138;
+  --bs-body-bg: #eef4fc;
+  --bs-body-color: #111a2e;
+  --bs-secondary-color: #55637d;
+  --bs-border-color: #d6e2f5;
 }
 
-body {
-  margin: 0;
-  font-family: "IBM Plex Sans", Arial, sans-serif;
-  background: var(--paper);
-  color: #1B2438;
+h1, h2, h3, h4, h5, h6 { font-weight: 800; letter-spacing: -0.015em; }
+
+.display-1, .display-4, .display-5, .display-6 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
-header {
-  background: var(--navy);
-  color: var(--paper);
-  padding: 1.5rem 2rem;
+:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+
+/* ---------- Header ---------- */
+.app-header {
+  background: #fff;
+  border-bottom: 1px solid var(--qx-border);
+  padding: 1rem 0 1.1rem;
+}
+.brand {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--qx-blue);
+  text-decoration: none;
+}
+.org { font-weight: 700; margin: 0.6rem 0 0; }
+.org-sub { color: var(--qx-muted); font-size: 0.95rem; margin: 0 0 0.9rem; }
+
+.nav-pills-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 1.15rem;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: #1e40af;
+  font-weight: 600;
+  text-decoration: none;
+}
+.nav-pill:hover { background: #d9e6fb; color: #1e3a8a; }
+.nav-pill.active { background: var(--qx-blue); color: #fff; }
+
+/* ---------- Page panel ---------- */
+.app-panel {
+  background: #fff;
+  border: 1px solid var(--qx-border);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  box-shadow: 0 1px 3px rgba(17, 26, 46, 0.05);
 }
 
-header h1 { margin: 0; }
-header a { color: var(--paper); text-decoration: none; }
-.tagline { margin: 0.25rem 0 0; color: #C5CEDD; }
+/* ---------- Cards ---------- */
+.card {
+  --bs-card-bg: var(--qx-card);
+  --bs-card-border-color: var(--qx-border);
+  --bs-card-border-radius: 1rem;
+  --bs-card-inner-border-radius: calc(1rem - 1px);
+}
+.card.shadow-sm { box-shadow: 0 1px 3px rgba(17, 26, 46, 0.06) !important; }
+.ticket-no { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; }
 
-main {
-  max-width: 720px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+/* ---------- Buttons ---------- */
+.btn {
+  --bs-btn-border-radius: 0.75rem;
+  min-height: 44px;
+  font-weight: 600;
+}
+.btn-lg {
+  --bs-btn-padding-y: 0.8rem;
+  --bs-btn-border-radius: 0.85rem;
+  min-height: 56px;
+}
+.btn-primary {
+  --bs-btn-bg: #2563eb;
+  --bs-btn-border-color: #2563eb;
+  --bs-btn-hover-bg: #1d4ed8;
+  --bs-btn-hover-border-color: #1d4ed8;
+  --bs-btn-active-bg: #1e40af;
+  --bs-btn-active-border-color: #1e40af;
+  --bs-btn-disabled-bg: #2563eb;
+  --bs-btn-disabled-border-color: #2563eb;
+}
+.btn-success {
+  --bs-btn-bg: #15803d;
+  --bs-btn-border-color: #15803d;
+  --bs-btn-hover-bg: #166534;
+  --bs-btn-hover-border-color: #166534;
+  --bs-btn-active-bg: #14532d;
+  --bs-btn-active-border-color: #14532d;
+}
+.btn-outline-danger {
+  --bs-btn-color: #b91c1c;
+  --bs-btn-border-color: #dc2626;
+  --bs-btn-hover-bg: #b91c1c;
+  --bs-btn-hover-border-color: #b91c1c;
+  --bs-btn-active-bg: #991b1b;
+  --bs-btn-active-border-color: #991b1b;
+}
+.btn-outline-primary {
+  --bs-btn-color: #1d4ed8;
+  --bs-btn-border-color: #2563eb;
+  --bs-btn-hover-bg: #2563eb;
+  --bs-btn-hover-border-color: #2563eb;
 }
 
-h2 { color: var(--teal); }
-
-.tickets { list-style: none; padding: 0; }
-.tickets li {
-  background: var(--card);
-  border: 1px solid #E2DED3;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.5rem;
+/* ---------- Status badges (text always says the status) ---------- */
+.badge {
+  border-radius: 999px;
+  padding: 0.5em 0.9em;
+  font-weight: 700;
 }
-.tickets a { color: var(--orange); font-weight: 600; }
+.badge.text-bg-warning   { background-color: #fef3c7 !important; color: #92400e !important; }
+.badge.text-bg-primary   { background-color: #dbeafe !important; color: #1e40af !important; }
+.badge.text-bg-success   { background-color: #dcfce7 !important; color: #166534 !important; }
+.badge.text-bg-secondary { background-color: #e5e7eb !important; color: #374151 !important; }
 
-code { background: #ECE8DE; padding: 0 0.3rem; border-radius: 4px; }
+/* ---------- Forms ---------- */
+.form-control, .form-select {
+  background-color: #f7f9fd;
+  border: 1px solid var(--qx-border);
+  border-radius: 0.75rem;
+}
+.form-control:focus, .form-select:focus {
+  background-color: #fff;
+  border-color: var(--qx-blue);
+  box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+}
+.form-label { font-weight: 600; }
 
-footer {
-  text-align: center;
-  color: #5A6272;
-  padding: 2rem 0;
+/* ---------- Alerts ---------- */
+.alert { border-radius: 0.75rem; font-weight: 600; }
+
+/* ---------- Tables ---------- */
+.table-responsive {
+  background: #fff;
+  border: 1px solid var(--qx-border);
+  border-radius: 1rem;
+}
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--qx-border);
+  margin-bottom: 0;
+}
+.table > thead > tr > th {
+  background-color: #e8f0fe;
+  color: #2f4f8f;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-block: 0.9rem;
+  border-bottom: 1px solid var(--qx-border);
+}
+.table > tbody > tr:last-child > * { border-bottom-width: 0; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 575.98px) {
+  main.container { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .app-panel { padding: 1rem; border-radius: 1rem; }
+  .brand { font-size: 1.5rem; }
+
+  .display-1 { font-size: 3.5rem; }
+  .display-4 { font-size: 2.5rem; }
+  .display-5 { font-size: 2.25rem; }
+  .display-6 { font-size: 1.75rem; }
+  .fs-3 { font-size: 1.35rem !important; }
+  .fs-5 { font-size: 1.05rem !important; }
 }
