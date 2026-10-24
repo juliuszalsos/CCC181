@@ -4,9 +4,10 @@ Run it with:
     flask --app app run --debug
 then open http://127.0.0.1:5000
 """
-from flask import Flask, abort, render_template
+from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
 app = Flask(__name__)
+app.secret_key = "dev-only-change-me"  # Week 11 moves this into an environment variable
 
 # Services offered at the PSA Iligan City provincial office.
 SERVICES = [
@@ -47,8 +48,19 @@ def people_ahead(ticket):
 
 @app.route("/")
 def index():
-    active = [t for t in TICKETS if t["status"] in ACTIVE_STATUSES]
-    return render_template("index.html", tickets=active, services=service_names())
+    return render_template("index.html")
+
+
+@app.route("/join")
+def join_form():
+    # Placeholder until Part 5 adds the real form.
+    return render_template("join.html")
+
+
+@app.route("/staff")
+def staff_dashboard():
+    # Placeholder until Part 7 adds the real dashboard.
+    return "Staff dashboard coming soon"
 
 
 @app.route("/queue/<int:ticket_id>")

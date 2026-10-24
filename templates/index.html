@@ -1,18 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <p>Welcome to QueuExpress. Check your place in line from your phone.</p>
-
-  <h2>Tickets in the queue</h2>
-  <ul class="tickets">
-    {% for t in tickets %}
-      <li>
-        <a href="{{ url_for('ticket', ticket_id=t.number) }}">#{{ t.number }}</a>
-        · {{ services[t.service_id] }}
-        · <span class="status status-{{ t.status }}">{{ t.status }}</span>
-      </li>
-    {% else %}
-      <li>The queue is empty.</li>
-    {% endfor %}
-  </ul>
+  <div class="py-4 text-center text-md-start">
+    <h1 class="display-5 fw-bold">QueuExpress</h1>
+    <p class="lead">
+      Get a ticket from your phone and follow your place in line at the
+      PSA Iligan City office, without standing in the lobby.
+    </p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('join_form') }}">Join the queue</a>
+  </div>
 {% endblock %}
