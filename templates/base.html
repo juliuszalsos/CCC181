@@ -22,9 +22,9 @@
       <div class="collapse navbar-collapse" id="mainNav">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'join_form' %}active{% endif %}"
-               {% if request.endpoint == 'join_form' %}aria-current="page"{% endif %}
-               href="{{ url_for('join_form') }}">Join the queue</a>
+            <a class="nav-link {% if request.endpoint in ('join_form', 'join') %}active{% endif %}"
+   {% if request.endpoint in ('join_form', 'join') %}aria-current="page"{% endif %}
+   href="{{ url_for('join_form') }}">Join the queue</a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'staff_dashboard' %}active{% endif %}"

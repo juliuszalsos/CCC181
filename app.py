@@ -4,6 +4,8 @@ Run it with:
     flask --app app run --debug
 then open http://127.0.0.1:5000
 """
+import re
+
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
 app = Flask(__name__)
@@ -28,6 +30,7 @@ TICKETS = [
 
 ACTIVE_STATUSES = ("waiting", "called")
 
+EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 
 def service_names():
     """Map service id -> service name for easy lookup in templates."""
@@ -51,11 +54,37 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/join")
+@app.get("/join")
 def join_form():
-    # Placeholder until Part 5 adds the real form.
-    return render_template("join.html")
+    return render_template("join.html", services=SERVICES, form={})
 
+
+@app.post("/join")
+def join():
+    form = request.form
+    name = form.get("name", "").strip()
+    email = form.get("email", "").strip().lower()
+    service_id = form.get("service_id", type=int)
+
+    errors = {}
+    if not name:
+        errors["name"] = "Enter your name."
+    elif len(name) > 100:
+        errors["name"] = "Your name is too long (100 characters at most)."
+    if not EMAIL_PATTERN.fullmatch(email):
+        errors["email"] = "Enter a valid email address, like juan@example.com."
+    if service_id not in [s["id"] for s in SERVICES]:
+        errors["service_id"] = "Choose a service."
+
+    if errors:
+        flash("Please fix the highlighted fields.", "danger")
+        return render_template("join.html", services=SERVICES, form=form, errors=errors), 400
+
+    number = TICKETS[-1]["number"] + 1 if TICKETS else 1
+    TICKETS.append({"number": number, "name": name, "email": email,
+                    "service_id": service_id, "status": "waiting"})
+    flash(f"You joined the queue. Your ticket is #{number}.", "success")
+    return redirect(url_for("ticket", ticket_id=number))
 
 @app.route("/staff")
 def staff_dashboard():
