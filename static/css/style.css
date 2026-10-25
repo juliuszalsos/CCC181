@@ -187,3 +187,5 @@ h1, h2, h3, h4, h5, h6 { font-weight: 800; letter-spacing: -0.015em; }
   .fs-3 { font-size: 1.35rem !important; }
   .fs-5 { font-size: 1.05rem !important; }
 }
+
+footer a { display: inline-block; padding: 0.75rem 0.5rem; }
