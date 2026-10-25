@@ -41,10 +41,16 @@
             {% endif %}
           </p>
 
-          <p id="status-sub" class="mb-0" {% if not (ticket.status == 'waiting' and ahead > 0) %}hidden{% endif %}>
-            &asymp; <span id="wait-minutes">{{ wait_minutes }}</span> min
-            <span class="text-body-secondary">approximate wait</span>
-          </p>
+          <div id="ahead-block" class="row g-3 align-items-end mt-1" {% if ticket.status != 'waiting' %}hidden{% endif %}>
+            <div class="col-6">
+              <p class="text-body-secondary text-uppercase small mb-0">People ahead of you</p>
+              <p id="ahead-number" class="display-3 fw-bold text-primary mb-0">{{ ahead }}</p>
+            </div>
+            <div class="col-6">
+              <p class="text-body-secondary text-uppercase small mb-0">Approximate wait</p>
+              <p class="fs-3 fw-bold mb-0">&asymp; <span id="wait-minutes">{{ wait_minutes }}</span> min</p>
+            </div>
+          </div>
         </div>
       </div> 
 
@@ -100,8 +106,8 @@
 
       document.getElementById("status-headline").textContent = headlineFor(data);
 
-      const showWait = data.status === "waiting" && data.ahead > 0;
-      document.getElementById("status-sub").hidden = !showWait;
+      document.getElementById("ahead-block").hidden = data.status !== "waiting";
+      document.getElementById("ahead-number").textContent = data.ahead;
       document.getElementById("wait-minutes").textContent = data.wait_minutes;
 
       // Once the ticket is finished, hide Leave and stop checking.
