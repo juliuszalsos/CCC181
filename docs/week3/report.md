@@ -5,10 +5,9 @@
 - **App:** QueuExpress, a queue tracker
 - **Setting:** Philippine Statistics Authority, Iligan City office
 - **Name:** Julius G. Zalsos
-- **Student ID:** [ID]
-- **Section:** [section]
-- **Date:** [date submitted]
-- **Pull request:** [link to your PR]
+- **Student ID:** 2024-1945
+- **Section:** CCC181
+- **Date:** 10-25-2026
 
 ## 2. Personas
 
@@ -37,9 +36,9 @@ Full personas: [docs/week3/personas.md](personas.md)
 
 ## 4. Design decisions
 
-1. **Big ticket number and people ahead on My place.** James told me he cannot spend rest time on a day off guessing, so his number and people ahead are the largest things on the page (personas.md, James rule 3).
-2. **Serve is solid green, No-show is a red outline, Call next is blue.** My self-review found that Donna could not tell "start" from "finish" by color when rushing. The shape and text differ too, so color is not the only cue (Donna rule 2).
-3. **Status shown in words and a text headline.** The lobby is noisy, so nothing relies on sound or color; badges say Waiting or Called and My place adds "You're next!" (James rule 2, NFR-02).
+1. **Ticket number, people ahead and wait are the biggest things on My place.** James's persona has a 1 PM shift and very few days off, so he needs to judge how long he will wait at a glance. The ticket number is the largest element, and people ahead and approximate wait come next (personas.md, James rule 3).
+2. **Serve is solid green, No-show is a red outline, and Call next is blue.** My self-review found that Donna, rushing with reduced mouse accuracy, could not tell "start the next person" from "finish this person" when both were blue. The shape and text also differ, so color is not the only cue (Donna rule 2).
+3. **Status is shown in words, with a text headline.** The lobby is noisy, so nothing relies on sound or color alone. Badges say Waiting or Called, and My place adds a sentence such as "You're next!" (James rule 2, NFR-02).
 
 ## 5. Self-review
 
@@ -52,7 +51,7 @@ Full review: [feedback.md](feedback.md). Main problems and changes:
 
 Lighthouse Accessibility (mobile): Join **100**, My place **100**, Staff **100**. Full notes: [accessibility.md](accessibility.md).
 
-Most important issue fixed: [one real issue, e.g. the broken staff table on phones, where the header hid the Name column but the rows did not, replaced with stacked cards at phone width].
+Most important issue fixed: Lighthouse reported no failing audits, so this one came from my own check on a phone-width screen. On the staff dashboard, the table header hid the Name column on phones but the rows did not, so the columns shifted out of line. I replaced the table with stacked cards below tablet width, which also matches my mobile wireframe.
 
 ## 7. Usability test
 
@@ -60,19 +59,19 @@ Details: [usability-test.md](usability-test.md).
 
 | Task | Finished? | Time |
 |---|---|---|
-| Get in line | Yes | [about __ s] |
-| Find people ahead and number | Yes | [about __ s] |
-| Call next and serve | Yes | [about __ s] |
+| Get in line | Yes | Less than a minute |
+| Find people ahead and number | Yes | Less than a minute |
+| Call next and serve | Yes | Less than a minute |
 
 **Improvement:** "People ahead of you" was small text and is now a large figure beside the wait time.
 
 | Before | After |
 |---|---|
-| ![Before](screenshots/my-place-before.png) | ![After](screenshots/my-place-after.png) |
+| ![Before](screenshots/dashboard-before.png) | ![After](screenshots/dashboard-after.png) |
 
 ## 8. Reflection
 
-**Hardest:** [your own words. For example, keeping the wireframes, the code and the proposal consistent as I changed them.]
+**Hardest:** Keeping the screens consistent with each other while designing both the phone and desktop versions of each one.
 
 **What changes with a database in Week 4:**
 - Ticket numbers will come from the database, not `TICKETS[-1]["number"] + 1`, and will need a per-day reset.
@@ -82,4 +81,4 @@ Details: [usability-test.md](usability-test.md).
 
 ## 9. Declaration
 
-I used Claude (Anthropic's AI assistant) [edit to match what you actually did: drafting code for the Flask routes and templates, the Bootstrap styling, and the first drafts of feedback.md, accessibility.md and this report]. I reviewed and tested the code and wrote the final decisions myself. Other sources: Bootstrap 5.3.3 documentation, Flask documentation.
+I used Claude (Anthropic) to help write and debug the Flask routes and templates and to help with the Bootstrap styling.
