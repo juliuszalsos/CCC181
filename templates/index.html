@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h1 class="h2 fw-bold mb-1">QueuExpress</h1>
+    <p class="text-body-secondary mb-0">Live queue at the PSA Iligan City office.</p>
+  </div>
+  <a class="btn btn-primary btn-lg" href="{{ url_for('join_form') }}">Join the queue</a>
+</div>
+
+{% if mine %}
+  <div class="alert alert-primary d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2" role="status">
+    <div>
+      <strong>Your ticket: #{{ mine.number }}</strong> · {{ services[mine.service_id] }} ·
+      {% if mine.status == 'called' %}It's your turn. Please go to the counter.
+      {% elif my_ahead == 0 %}You're next!
+      {% elif my_ahead == 1 %}1 person ahead of you
+      {% else %}{{ my_ahead }} people ahead of you
+      {% endif %}
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('ticket', ticket_id=mine.number) }}">View my place</a>
+  </div>
+{% endif %}
+
+<h2 class="h5 mt-4">Now serving</h2>
+{% if called %}
+  <div class="row g-3 mb-4">
+    {% for t in called %}
+      <div class="col-6 col-md-4">
+        <div class="card text-center h-100 border-primary">
+          <div class="card-body">
+            <p class="display-5 fw-bold mb-0">#{{ t.number }}
+              {% if mine and t.number == mine.number %}<span class="badge text-bg-primary fs-6 align-middle">You</span>{% endif %}
+            </p>
+            <p class="small text-body-secondary mb-0">{{ services[t.service_id] }}</p>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-body-secondary mb-4">No ticket is being called right now.</p>
+{% endif %}
+
+<h2 class="h5">Waiting ({{ waiting|length }})</h2>
+<div class="table-responsive">
+  <table class="table align-middle">
+    <thead>
+      <tr><th scope="col">Ticket</th><th scope="col">Service</th><th scope="col">Status</th></tr>
+    </thead>
+    <tbody>
+      {% for t in waiting %}
+        <tr class="{% if mine and t.number == mine.number %}table-primary{% endif %}">
+          <th scope="row" class="fs-5">#{{ t.number }}
+            {% if mine and t.number == mine.number %}<span class="badge text-bg-primary">You</span>{% endif %}
+          </th>
+          <td>{{ services[t.service_id] }}</td>
+          <td><span class="badge text-bg-warning">Waiting</span></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3" class="text-body-secondary">No one is waiting.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
