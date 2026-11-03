@@ -28,16 +28,16 @@ migrate = Migrate(app, db)
 # Philippine Timezone (UTC+8)
 PH_TIME = timezone(timedelta(hours=8))
 
-# In-memory storage baseline from Week 3 (prior to Part 7 persistence refactoring)
+# In-memory tickets storage baseline (prior to Part 7 database persistence)
 TICKETS = []
-SERVICES = {
-    1: {"id": 1, "name": "Birth certificate", "avg_minutes": 10},
-    2: {"id": 2, "name": "Marriage certificate", "avg_minutes": 10},
-    3: {"id": 3, "name": "Death certificate", "avg_minutes": 10},
-    4: {"id": 4, "name": "PhilSys National ID", "avg_minutes": 15},
-}
 ACTIVE_STATUSES = ("waiting", "called")
 EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+
+
+# Part 6: Read services from database helper
+def all_services():
+    """Retrieve all available service categories from PostgreSQL."""
+    return db.session.scalars(db.select(Service).order_by(Service.name)).all()
 
 
 @app.template_filter("local")
@@ -55,18 +55,21 @@ def index():
     if mine and mine.get("status") not in ACTIVE_STATUSES:
         mine = None
 
+    services = {s.id: s.name for s in all_services()}
+
     return render_template(
         "index.html",
         called=called,
         waiting=waiting,
-        services=SERVICES,
+        services=services,
         mine=mine,
     )
 
 
+# Part 6: Update Join form to fetch services from PostgreSQL database
 @app.get("/join")
 def join_form():
-    return render_template("join.html", services=list(SERVICES.values()), form={})
+    return render_template("join.html", services=all_services(), form={})
 
 
 @app.post("/join")
@@ -75,20 +78,21 @@ def join():
     name = form.get("name", "").strip()
     email = form.get("email", "").strip().lower()
     service_id = form.get("service_id", type=int)
+    service = db.session.get(Service, service_id) if service_id else None
 
     errors = {}
     if not name or len(name) > 80:
         errors["name"] = "Enter your name (up to 80 characters)."
     if not EMAIL_PATTERN.fullmatch(email) or len(email) > 120:
         errors["email"] = "Enter a valid email address."
-    if service_id not in SERVICES:
+    if service is None:
         errors["service_id"] = "Choose a service."
 
     if errors:
         flash("Please fix the highlighted fields.", "danger")
         return (
             render_template(
-                "join.html", services=list(SERVICES.values()), form=form, errors=errors
+                "join.html", services=all_services(), form=form, errors=errors
             ),
             400,
         )
@@ -113,13 +117,13 @@ def ticket(ticket_id):
     t = next((t for t in TICKETS if t["id"] == ticket_id), None)
     if not t:
         abort(404)
-    service = SERVICES.get(t["service_id"])
+    service = db.session.get(Service, t["service_id"])
     return render_template("ticket.html", ticket=t, service=service)
 
 
 @app.get("/staff")
 def staff_dashboard():
-    return render_template("staff.html", queue=TICKETS, services=list(SERVICES.values()))
+    return render_template("staff.html", queue=TICKETS, services=all_services())
 
 
 @app.route("/hello")
