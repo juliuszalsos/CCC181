@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from flask_migrate import Migrate
+from sqlalchemy.exc import IntegrityError
 
 from models import Service, Ticket, User, db
 
@@ -28,8 +29,6 @@ migrate = Migrate(app, db)
 # Philippine Timezone (UTC+8)
 PH_TIME = timezone(timedelta(hours=8))
 
-# In-memory tickets storage baseline (prior to Part 7 database persistence)
-TICKETS = []
 ACTIVE_STATUSES = ("waiting", "called")
 EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 
@@ -48,25 +47,22 @@ def local_time(value):
 
 @app.route("/")
 def index():
-    called = [t for t in TICKETS if t.get("status") == "called"]
-    waiting = [t for t in TICKETS if t.get("status") == "waiting"]
-    mine_id = session.get("ticket_id")
-    mine = next((t for t in TICKETS if t["id"] == mine_id), None) if mine_id else None
-    if mine and mine.get("status") not in ACTIVE_STATUSES:
-        mine = None
-
     services = {s.id: s.name for s in all_services()}
+    mine_id = session.get("ticket_id")
+    mine = db.session.get(Ticket, mine_id) if mine_id else None
+    if mine and mine.status not in ACTIVE_STATUSES:
+        mine = None
 
     return render_template(
         "index.html",
-        called=called,
-        waiting=waiting,
+        called=[],
+        waiting=[],
         services=services,
         mine=mine,
     )
 
 
-# Part 6: Update Join form to fetch services from PostgreSQL database
+# Part 7: Join Queue with PostgreSQL Persistence
 @app.get("/join")
 def join_form():
     return render_template("join.html", services=all_services(), form={})
@@ -80,6 +76,9 @@ def join():
     service_id = form.get("service_id", type=int)
     service = db.session.get(Service, service_id) if service_id else None
 
+    is_priority = bool(form.get("is_priority"))
+    copies_requested = form.get("copies_requested", 1, type=int)
+
     errors = {}
     if not name or len(name) > 80:
         errors["name"] = "Enter your name (up to 80 characters)."
@@ -87,6 +86,8 @@ def join():
         errors["email"] = "Enter a valid email address."
     if service is None:
         errors["service_id"] = "Choose a service."
+    if copies_requested < 1 or copies_requested > 5:
+        errors["copies_requested"] = "Copies requested must be between 1 and 5."
 
     if errors:
         flash("Please fix the highlighted fields.", "danger")
@@ -97,33 +98,48 @@ def join():
             400,
         )
 
-    ticket_id = len(TICKETS) + 1
-    ticket = {
-        "id": ticket_id,
-        "name": name,
-        "email": email,
-        "service_id": service_id,
-        "status": "waiting",
-        "created_at": datetime.now(PH_TIME),
-    }
-    TICKETS.append(ticket)
-    session["ticket_id"] = ticket_id
-    flash(f"You joined the queue. Your ticket is #{ticket_id}.", "success")
-    return redirect(url_for("ticket", ticket_id=ticket_id))
+    # Find existing user by email or instantiate a new User
+    user = db.session.scalar(db.select(User).filter_by(email=email))
+    if user is None:
+        user = User(name=name, email=email)
+    else:
+        user.name = name  # Update existing user's display name if changed
+
+    # Instantiate Ticket connected to User & Service
+    ticket = Ticket(
+        user=user,
+        service=service,
+        is_priority=is_priority,
+        copies_requested=copies_requested,
+    )
+    db.session.add(ticket)
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash("Something went wrong saving your ticket. Please try again.", "danger")
+        return (
+            render_template(
+                "join.html", services=all_services(), form=form, errors={}
+            ),
+            409,
+        )
+
+    session["ticket_id"] = ticket.id
+    flash(f"You joined the queue. Your ticket is #{ticket.id}.", "success")
+    return redirect(url_for("ticket", ticket_id=ticket.id))
 
 
 @app.get("/queue/<int:ticket_id>")
 def ticket(ticket_id):
-    t = next((t for t in TICKETS if t["id"] == ticket_id), None)
-    if not t:
-        abort(404)
-    service = db.session.get(Service, t["service_id"])
-    return render_template("ticket.html", ticket=t, service=service)
+    t = db.get_or_404(Ticket, ticket_id)
+    return render_template("ticket.html", ticket=t, service=t.service)
 
 
 @app.get("/staff")
 def staff_dashboard():
-    return render_template("staff.html", queue=TICKETS, services=all_services())
+    return render_template("staff.html", queue=[], services=all_services())
 
 
 @app.route("/hello")
