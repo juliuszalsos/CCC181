@@ -56,7 +56,14 @@ EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 
 
 def all_services():
+    """Retrieve all services, active or inactive."""
     return db.session.scalars(db.select(Service).order_by(Service.name)).all()
+
+
+def active_services():
+    """Retrieve only active services for visitor operations."""
+    stmt = db.select(Service).filter_by(active=True).order_by(Service.name)
+    return db.session.scalars(stmt).all()
 
 
 @app.get("/my-place")
@@ -121,7 +128,7 @@ def index():
 
 @app.get("/join")
 def join_form():
-    return render_template("join.html", services=all_services(), form={})
+    return render_template("join.html", services=active_services(), form={})
 
 
 @app.post("/join")
@@ -140,7 +147,7 @@ def join():
         errors["name"] = "Enter your name (up to 80 characters)."
     if not EMAIL_PATTERN.fullmatch(email) or len(email) > 120:
         errors["email"] = "Enter a valid email address."
-    if service is None:
+    if service is None or not service.active:
         errors["service_id"] = "Choose a service."
     if copies_requested < 1 or copies_requested > 5:
         errors["copies_requested"] = "Copies requested must be between 1 and 5."
@@ -149,7 +156,7 @@ def join():
         flash("Please fix the highlighted fields.", "danger")
         return (
             render_template(
-                "join.html", services=all_services(), form=form, errors=errors
+                "join.html", services=active_services(), form=form, errors=errors
             ),
             400,
         )
@@ -172,7 +179,7 @@ def join():
         flash("Something went wrong saving your ticket. Please try again.", "danger")
         return (
             render_template(
-                "join.html", services=all_services(), form=form, errors={}
+                "join.html", services=active_services(), form=form, errors={}
             ),
             409,
         )
@@ -183,7 +190,7 @@ def join():
 
 
 STAFF_COUNTER = 3  # Donna's counter number (shown on the dashboard)
-STAFF_ACTIONS = {"serve": "served", "no-show": "no-show"}
+STAFF_ACTIONS = {"call": "called", "serve": "served", "no-show": "no-show"}
 
 
 def staff_redirect():
@@ -209,13 +216,15 @@ def staff_dashboard():
     )
 
 
+# 9a. Call Next Button
 @app.post("/staff/call-next")
 def staff_call_next():
     service_id = request.form.get("service_id", type=int)
     stmt = (
         db.select(Ticket)
-        .where(Ticket.status == "waiting")
+        .filter_by(status="waiting")
         .order_by(Ticket.created_at)
+        .limit(1)
     )
     if service_id:
         stmt = stmt.where(Ticket.service_id == service_id)
@@ -223,7 +232,7 @@ def staff_call_next():
 
     if next_ticket:
         next_ticket.status = "called"
-        next_ticket.called_at = datetime.now(timezone.utc)
+        next_ticket.called_at = func.now()
         db.session.commit()
         flash(
             f"Ticket #{next_ticket.id} called. Send them to Counter {STAFF_COUNTER}.",
@@ -234,21 +243,90 @@ def staff_call_next():
     return staff_redirect()
 
 
+# 9a. Staff Ticket Status Action
 @app.post("/staff/tickets/<int:ticket_id>/<action>")
 def staff_action(ticket_id, action):
     new_status = STAFF_ACTIONS.get(action)
-    t = db.session.get(Ticket, ticket_id)
-    if t is None or new_status is None:
+    if new_status is None:
         abort(404)
-    if t.status != "called":
-        flash(
-            f"Ticket #{ticket_id} is not being called, so nothing changed.", "warning"
-        )
-    else:
-        t.status = new_status
-        db.session.commit()
-        flash(f"Ticket #{ticket_id} marked {new_status}.", "success")
+    t = db.get_or_404(Ticket, ticket_id)
+    t.status = new_status
+    if new_status == "called":
+        t.called_at = func.now()
+    db.session.commit()
+    flash(f"Ticket #{ticket_id} marked {new_status}.", "info")
     return staff_redirect()
+
+
+# 9c. Hard Delete: Removing a Mistaken Ticket
+@app.post("/staff/tickets/<int:ticket_id>/delete")
+def delete_ticket(ticket_id):
+    t = db.get_or_404(Ticket, ticket_id)
+    db.session.delete(t)
+    db.session.commit()
+    flash(f"Ticket #{ticket_id} was deleted.", "warning")
+    return staff_redirect()
+
+
+# 9d. Manage Services Routes
+@app.get("/staff/services")
+def services_list():
+    return render_template("staff_services.html", services=all_services())
+
+
+@app.post("/staff/services")
+def service_create():
+    name = request.form.get("name", "").strip()
+    minutes = request.form.get("avg_minutes", type=int)
+    if not name or len(name) > 60 or not minutes or minutes <= 0:
+        flash("Enter a name (up to 60 characters) and minutes greater than 0.", "danger")
+        return redirect(url_for("services_list"))
+    db.session.add(Service(name=name, avg_minutes=minutes))
+    try:
+        db.session.commit()
+        flash(f'Service "{name}" added.', "success")
+    except IntegrityError:
+        db.session.rollback()
+        flash(f'A service named "{name}" already exists.', "danger")
+    return redirect(url_for("services_list"))
+
+
+@app.post("/staff/services/<int:service_id>/edit")
+def service_edit(service_id):
+    s = db.get_or_404(Service, service_id)
+    name = request.form.get("name", "").strip()
+    minutes = request.form.get("avg_minutes", type=int)
+    active = request.form.get("active") == "on"
+
+    if not name or len(name) > 60 or not minutes or minutes <= 0:
+        flash("Enter a valid name and positive average minutes.", "danger")
+        return redirect(url_for("services_list"))
+
+    s.name = name
+    s.avg_minutes = minutes
+    s.active = active
+    try:
+        db.session.commit()
+        flash(f'Service "{s.name}" updated.', "success")
+    except IntegrityError:
+        db.session.rollback()
+        flash(f'A service named "{name}" already exists.', "danger")
+    return redirect(url_for("services_list"))
+
+
+@app.post("/staff/services/<int:service_id>/delete")
+def service_delete(service_id):
+    s = db.get_or_404(Service, service_id)
+    if s.tickets:
+        flash(
+            f'"{s.name}" has tickets, so it cannot be deleted. Turn it off instead.',
+            "danger",
+        )
+        return redirect(url_for("services_list"))
+    db.session.delete(s)
+    db.session.commit()
+    flash(f'Service "{s.name}" deleted.', "warning")
+    return redirect(url_for("services_list"))
 
 
 # 8b. My place Route
@@ -267,17 +345,16 @@ def ticket_status(ticket_id):
     return {"status": t.status, "ahead": people_ahead(t)}
 
 
+# 9b. Soft Delete: Leaving the Queue
 @app.post("/queue/<int:ticket_id>/leave")
 def leave(ticket_id):
-    t = db.session.get(Ticket, ticket_id)
-    if t is None:
-        abort(404)
-    if t.status in ACTIVE_STATUSES:
-        t.status = "cancelled"
+    t = db.get_or_404(Ticket, ticket_id)
+    if t.status == "waiting":
+        t.status = "left"
         db.session.commit()
         if session.get("ticket_id") == ticket_id:
             session.pop("ticket_id")
-        flash(f"You left the queue. Ticket #{t.id} was cancelled.", "info")
+        flash("You left the queue.", "info")
         return redirect(url_for("index"))
     flash("That ticket is no longer in the queue.", "warning")
     return redirect(url_for("ticket", ticket_id=ticket_id))
