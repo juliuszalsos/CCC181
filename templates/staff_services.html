@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <h2>Manage Services</h2>
+
+  <div class="card my-4 p-3">
+    <h4>Add New Service</h4>
+    <form method="post" action="{{ url_for('service_create') }}" class="row g-3">
+      <div class="col-md-5">
+        <input type="text" name="name" class="form-control" placeholder="Service Name" required>
+      </div>
+      <div class="col-md-4">
+        <input type="number" name="avg_minutes" class="form-control" placeholder="Avg Minutes" required min="1">
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100">Add Service</button>
+      </div>
+    </form>
+  </div>
+
+  <table class="table table-striped align-middle">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Avg Minutes</th>
+        <th>Tickets Count</th>
+        <th>Active</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in services %}
+      <tr>
+        <form method="post" action="{{ url_for('service_edit', service_id=s.id) }}">
+          <td>
+            <input type="text" name="name" class="form-control" value="{{ s.name }}" required>
+          </td>
+          <td>
+            <input type="number" name="avg_minutes" class="form-control" value="{{ s.avg_minutes }}" required min="1">
+          </td>
+          <td>{{ s.tickets|length }}</td>
+          <td>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="active" {% if s.active %}checked{% endif %}>
+            </div>
+          </td>
+          <td>
+            <button type="submit" class="btn btn-sm btn-outline-success">Update</button>
+        </form>
+            <form method="post" action="{{ url_for('service_delete', service_id=s.id) }}" class="d-inline" data-confirm="Delete service {{ s.name }}?">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

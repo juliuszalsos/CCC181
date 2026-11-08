@@ -52,6 +52,11 @@ Priority: **Must** = needed for the Week 2 prototype, **Should** = planned for l
 | FR-04 | Staff shall be able to filter the queue list by a specific service. | Must | Staff | Selecting a service from the filter dropdown updates the staff table to display only waiting and called tickets for that service. |
 | FR-05 | Staff shall be able to call the next waiting applicant in line. | Must | Staff | Clicking "Call next" updates the status of the first waiting ticket to |
 | FR-06 | Staff shall be able to mark an applicant as served or as a no-show to update their status in the queue.| Must | Staff, Customer | Clicking "Serve" or "No-show" issues a POST request that updates ticket status to served or no-show and removes them from the active waiting list. |
+| FR-07 | A staff member can deactivate or reactivate a service to control public availability. | Must | Staff | Toggling a service to inactive hides it from the /join form while retaining existing historical records. |
+| FR-08 ★ | A senior citizen, PWD, or pregnant applicant can select a priority lane when joining the queue. | Should | Applicant | Joining with priority flagged places the ticket in a priority sub-queue that gets called before standard tickets. |
+| FR-09 | A staff member can save high-contrast and enlarged font display settings to their account profile to reduce desk eye strain. | Could | Staff | Saving visual preference updates the `high_contrast` field in `users` and applies high-contrast styling across all dashboard screens. | 
+| FR-10 ★ | A citizen can specify the number of document copies requested (1 to 5 copies) when joining the queue for civil registry services. | Should | Applicant | Selecting a copy count saves the value to the ticket and displays it on the staff dashboard next to the service name. | 
+| FR-11 ★ | A staff member can attach a missing requirement remark (e.g., "Missing valid ID") when marking a ticket as no-show or pending. | Should | Staff | Entering text in the remark field saves the note to the ticket row before changing its status. |
 
 ## 6. Non-Functional Requirements
 
@@ -62,6 +67,7 @@ Priority: **Must** = needed for the Week 2 prototype, **Should** = planned for l
 | NFR-03 | **Performance:** Pages load in under 2 seconds on spotty mobile data in the lobby; live status auto-polling consumes minimal bandwidth via lightweight JSON updates.|
 | NFR-04 | **Privacy:** The public /queue/<ticket_id> page displays only ticket numbers, service name, status, and position ahead without exposing full personal email addresses or confidential details. |
 | NFR-05 | **Portability:** Runs on any modern browser with no installation. |
+| NFR-06 | **Database Security:** No active or historical ticket data is lost when the Flask app or PostgreSQL database container restarts. |
 
 ## 7. Scope
 

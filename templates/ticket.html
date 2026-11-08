@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Ticket #{{ ticket.number }} · QueuExpress{% endblock %}
+{% block title %}Ticket #{{ ticket.id }} · QueuExpress{% endblock %}
 
 {% block content %}
 {% set badge_class = {
@@ -8,7 +8,7 @@
   'called': 'text-bg-primary',
   'served': 'text-bg-success',
   'no-show': 'text-bg-secondary',
-  'cancelled': 'text-bg-secondary'
+  'left': 'text-bg-secondary'
 } %}
 <div class="row justify-content-center">
   <div class="col-12 col-md-8 col-lg-6">
@@ -17,7 +17,7 @@
     <div class="card shadow-sm">
       <div class="card-body p-4">
         <p class="text-body-secondary text-uppercase small mb-0">Your ticket number</p>
-        <p class="display-1 fw-bold mb-2">#{{ ticket.number }}</p>
+        <p class="display-1 fw-bold mb-2">#{{ ticket.id }}</p>
 
         <p class="text-body-secondary text-uppercase small mb-0">Service</p>
         <p class="fs-5 fw-semibold">{{ service.name }}</p>
@@ -48,7 +48,7 @@
             </div>
             <div class="col-6">
               <p class="text-body-secondary text-uppercase small mb-0">Approximate wait</p>
-              <p class="fs-3 fw-bold mb-0">&asymp; <span id="wait-minutes">{{ wait_minutes }}</span> min</p>
+              <p class="fs-3 fw-bold mb-0">&asymp; <span id="wait-minutes">{{ (ahead + 1) * service.avg_minutes }}</span> min</p>
             </div>
           </div>
         </div>
@@ -56,8 +56,8 @@
 
       {% if ticket.status in ('waiting', 'called') %}
         <div id="leave-footer" class="card-footer bg-transparent p-3">
-          <form method="post" action="{{ url_for('leave', ticket_id=ticket.number) }}"
-                onsubmit="return confirm('Leave the queue with ticket #{{ ticket.number }}?');">
+          <form method="post" action="{{ url_for('leave', ticket_id=ticket.id) }}"
+                onsubmit="return confirm('Leave the queue with ticket #{{ ticket.id }}?');">
             <button type="submit" class="btn btn-outline-danger btn-lg w-100">Leave the queue</button>
           </form>
         </div>
@@ -72,13 +72,13 @@
 
 {% block scripts %}
 <script>
-  const statusUrl = "{{ url_for('ticket_status', ticket_id=ticket.number) }}";
+  const statusUrl = "{{ url_for('ticket_status', ticket_id=ticket.id) }}";
   const badgeClasses = {
     "waiting": "text-bg-warning",
     "called": "text-bg-primary",
     "served": "text-bg-success",
     "no-show": "text-bg-secondary",
-    "cancelled": "text-bg-secondary",
+    "left": "text-bg-secondary",
   };
 
   function headlineFor(data) {
@@ -108,9 +108,7 @@
 
       document.getElementById("ahead-block").hidden = data.status !== "waiting";
       document.getElementById("ahead-number").textContent = data.ahead;
-      document.getElementById("wait-minutes").textContent = data.wait_minutes;
 
-      // Once the ticket is finished, hide Leave and stop checking.
       if (data.status !== "waiting" && data.status !== "called") {
         const footer = document.getElementById("leave-footer");
         if (footer) footer.hidden = true;
